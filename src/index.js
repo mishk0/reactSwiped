@@ -67,6 +67,7 @@ class Swipe {
 
         this.onOpen = typeof o.onOpen === 'function' ? o.onOpen : fn;
         this.onClose = typeof o.onClose === 'function' ? o.onClose : fn;
+        this.onMove = typeof o.onMove === 'function' ? o.onClose : fn;
 
         this.right = o.right;
         this.left = o.left;
@@ -262,6 +263,7 @@ class Swipe {
         }
 
         this.animation(this.delta, 0);
+        this.onMove(this.delta);
     };
 
     animation(x, duration) {
