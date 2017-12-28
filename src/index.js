@@ -1,12 +1,12 @@
-var msPointer = window.navigator.msPointerEnabled;
+let msPointer = window.navigator.msPointerEnabled;
 
-var touch = {
+let touch = {
     start: msPointer ? 'MSPointerDown' : 'touchstart',
     move: msPointer ? 'MSPointerMove' : 'touchmove',
     end: msPointer ? 'MSPointerUp' : 'touchend'
 };
 
-var prefix = (function () {
+let prefix = (function () {
     var styles = window.getComputedStyle(document.documentElement, '');
     var pre = (Array.prototype.slice
             .call(styles)
@@ -17,7 +17,7 @@ var prefix = (function () {
     return '-' + pre + '-';
 })();
 
-var transitionEvent = (function() {
+let transitionEvent = (function() {
     var t,
         el = document.createElement("fakeelement");
 
@@ -35,16 +35,25 @@ var transitionEvent = (function() {
     }
 })();
 
-var cssProps = {
+let cssProps = {
     'transition': prefix + 'transition',
     'transform': prefix + 'transform'
 };
 
-var fn = function() {};
+let defaultOptions = {
+    duration: 200,
+    tolerance: 50,
+    time: 200,
+    dir: 1,
+    right: 0,
+    left: 0
+};
+
+let fn = function() {};
 
 class Swipe {
     constructor(o = {}) {
-        o = Object.assign(this.defaultOptions, o);
+        o = Object.assign(defaultOptions, o);
 
         this.duration = o.duration;
         this.tolerance = o.tolerance;
@@ -71,17 +80,6 @@ class Swipe {
 
         this._bindEvents();
     };
-
-    get defaultOptions() {
-        return {
-            duration: 200,
-            tolerance: 50,
-            time: 200,
-            dir: 1,
-            right: 0,
-            left: 0
-        };
-    }
 
     _closeAll(groupNumber) {
         _elems.forEach(function(Swiped) {
@@ -180,7 +178,7 @@ class Swipe {
         this.swiped = true;
 
         if (!isForce) {
-            this.transitionEnd(this.elem, this.onOpen);
+            this.transitionEnd(this.elem, () => this.onOpen());
         }
 
         this.resetValue();
@@ -218,9 +216,9 @@ class Swipe {
     };
 
      _bindEvents() {
-        delegate(touch.move, 'touchMove');
-        delegate(touch.end, 'touchEnd');
-        delegate(touch.start, 'touchStart');
+         document.addEventListener(touch.move, (e) => this.touchMove(e));
+         document.addEventListener(touch.end, (e) => this.touchEnd(e));
+         document.addEventListener(touch.start, (e) => this.touchStart(e));
     };
 
     /**
@@ -272,30 +270,27 @@ class Swipe {
         this.elem.style.cssText = cssProps.transition + ':' + cssProps.transform + ' ' + duration + 'ms; ' +
             cssProps.transform  + ':' + 'translate3d(' + x + 'px, 0px, 0px)';
     };
-
-    destroy(isRemoveNode) {
-        var id = this.id;
-
-        Swiped._elems.forEach(function(elem, i) {
-            if (elem.id === id) {
-                Swiped._elems.splice(i, 1);
-            }
-        });
-
-        if (isRemoveNode) {
-            this.elem.parentNode.removeChild(this.elem);
-        }
-    };
 }
 
 export default new class Swiped {
     constructor() {
-        this._elems = [];
-        this.elemId = 0;
+        this.items = [];
+        this.id = 0;
     }
 
     init(o) {
-        o.id = this.elemId++;
-        return this._elems.push(new Swipe(o));
+        o.id = this.id++;
+        return this.items.push(new Swipe(o));
+    };
+
+    destroy(id, isRemoveNode) {
+        this.items.forEach((item, i) => {
+            if (item.id === id) {
+                if (isRemoveNode) {
+                    item.elem.parentNode.removeChild(item.elem);
+                }
+                this.items.splice(i, 1);
+            }
+        });
     };
 }
