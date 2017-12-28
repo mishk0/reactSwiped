@@ -51,6 +51,37 @@ let defaultOptions = {
 
 let fn = function() {};
 
+let swiped = new class Swiped {
+    constructor() {
+        this.items = [];
+        this.id = 0;
+    }
+
+    init(o) {
+        o.id = this.id++;
+        return this.items.push(new Swipe(o));
+    };
+
+    destroy(id, isRemoveNode) {
+        this.items.forEach((item, i) => {
+            if (item.id === id) {
+                if (isRemoveNode) {
+                    item.elem.parentNode.removeChild(item.elem);
+                }
+                this.items.splice(i, 1);
+            }
+        });
+    };
+
+    _closeAll(groupNumber) {
+        this.items.forEach(item => {
+            if (item.group === groupNumber) {
+                item.close(true);
+            }
+        });
+    };
+};
+
 class Swipe {
     constructor(o = {}) {
         o = Object.assign(defaultOptions, o);
@@ -59,7 +90,6 @@ class Swipe {
         this.tolerance = o.tolerance;
         this.time = o.time;
         this.width = o.left || o.right;
-        this.list = o.list;
         this.dir = o.dir;
         this.group = o.group;
         this.id = o.id;
@@ -82,13 +112,9 @@ class Swipe {
         this._bindEvents();
     };
 
-    _closeAll(groupNumber) {
-        _elems.forEach(function(Swiped) {
-            if (Swiped.group === groupNumber) {
-                Swiped.close(true);
-            }
-        });
-    };
+    destroy(isRemoveNode) {
+        swiped.destroy(this.id, isRemoveNode);
+    }
 
     transitionEnd(node, cb) {
         var that = this;
@@ -125,8 +151,8 @@ class Swipe {
 
         this.resetValue();
 
-        if (this.list) {
-            Swiped._closeAll(this.group);
+        if (this.group) {
+            swiped._closeAll(this.group);
         } else {
             this.close(true);
         }
@@ -217,9 +243,9 @@ class Swipe {
     };
 
      _bindEvents() {
-         document.addEventListener(touch.move, (e) => this.touchMove(e));
-         document.addEventListener(touch.end, (e) => this.touchEnd(e));
-         document.addEventListener(touch.start, (e) => this.touchStart(e));
+         this.elem.addEventListener(touch.move, (e) => this.touchMove(e));
+         this.elem.addEventListener(touch.end, (e) => this.touchEnd(e));
+         this.elem.addEventListener(touch.start, (e) => this.touchStart(e));
     };
 
     /**
@@ -274,25 +300,4 @@ class Swipe {
     };
 }
 
-export default new class Swiped {
-    constructor() {
-        this.items = [];
-        this.id = 0;
-    }
-
-    init(o) {
-        o.id = this.id++;
-        return this.items.push(new Swipe(o));
-    };
-
-    destroy(id, isRemoveNode) {
-        this.items.forEach((item, i) => {
-            if (item.id === id) {
-                if (isRemoveNode) {
-                    item.elem.parentNode.removeChild(item.elem);
-                }
-                this.items.splice(i, 1);
-            }
-        });
-    };
-}
+export default swiped;
