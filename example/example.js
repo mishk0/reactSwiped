@@ -1,7 +1,7 @@
 import Swiped from '../src';
-debugger;
-var a1 = Swiped.init({
-    elem: '.list1 li',
+
+Swiped.init({
+    elem: '.list1',
     right: 200,
     onOpen: function() {
         this.destroy(true)
@@ -9,9 +9,4 @@ var a1 = Swiped.init({
     onClose: function() {
         console.log('close')
     }
-});
-document.querySelector('.foo span').addEventListener('touchstart', function(e) {
-    a4.toggle();
-    e.stopPropagation();
-    e.preventDefault();
 });
