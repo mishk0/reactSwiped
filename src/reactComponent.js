@@ -1,8 +1,8 @@
 import PropTypes from 'prop-types';
 import Swiped from './swiped';
-import React, { Component } from 'react';
+import React from 'react';
 
-class ReactSwiped extends Component {
+class ReactSwiped extends React.Component {
     componentDidMount() {
         this.swiped = Swiped.init(Object.assign(this.props.options, { elem: this.node }));
     }
@@ -12,17 +12,21 @@ class ReactSwiped extends Component {
     }
 
     render() {
-        return (
-            <div ref={node => this.node = node} className="reactSwiped list1">
-                { this.props.children }
-            </div>
-        );
+        let component = this.props.component || 'div';
+        let props = {
+            ...this.props,
+            ref: node => this.node = node
+        };
+
+        return React.createElement(component, props, this.props.children);
     }
 }
 
 ReactSwiped.propTypes = {
-    left: PropTypes.number,
-    right: PropTypes.number
+    left: PropTypes.any,
+    right: PropTypes.any,
+    className: PropTypes.string,
+    component: PropTypes.string
 };
 
 export default ReactSwiped;

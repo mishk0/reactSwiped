@@ -18,14 +18,14 @@ let prefix = (function () {
 })();
 
 let transitionEvent = (function() {
-    var t,
-        el = document.createElement("fakeelement");
+    let t;
+    let el = document.createElement('el');
 
-    var transitions = {
-        "transition"      : "transitionend",
-        "OTransition"     : "oTransitionEnd",
-        "MozTransition"   : "transitionend",
-        "WebkitTransition": "webkitTransitionEnd"
+    let transitions = {
+        transition: 'transitionend',
+        OTransition: 'oTransitionEnd',
+        MozTransition: 'transitionend',
+        WebkitTransition: 'webkitTransitionEnd'
     };
 
     for (t in transitions){
@@ -66,6 +66,10 @@ let swiped = new class Swiped {
         return swipe;
     };
 
+    hasSwipedItems() {
+        return this.items.some(item => item.swiped);
+    };
+
     destroy(id, isRemoveNode) {
         this.items.forEach((item, i) => {
             if (item.id === id) {
@@ -77,7 +81,7 @@ let swiped = new class Swiped {
         });
     };
 
-    _closeAll(groupNumber) {
+    closeAll(groupNumber) {
         this.items.forEach(item => {
             if (item.group === groupNumber) {
                 item.close(true);
@@ -92,6 +96,8 @@ class Swipe {
 
         this.duration = o.duration;
         this.tolerance = o.tolerance;
+        this.resistanceLeft = typeof o.left === 'object' ? o.left.resistance : true;
+        this.resistanceRight = typeof o.right === 'object' ? o.right.resistance : true;
         this.time = o.time;
         this.width = o.left || o.right;
         this.dir = o.dir;
@@ -103,12 +109,12 @@ class Swipe {
         this.onClose = typeof o.onClose === 'function' ? o.onClose : fn;
         this.onMove = typeof o.onMove === 'function' ? o.onMove : fn;
 
-        this.right = o.right;
-        this.left = o.left;
+        this.right = typeof o.right === 'number' ? o.right : o.right.distance;
+        this.left = typeof o.left === 'number' ? o.left : o.left.distance;
 
         if (
-            (o.right > 0 && o.tolerance > o.right) ||
-            (o.left > 0 && o.tolerance > o.left)
+            (this.right > 0 && this.tolerance > this.right) ||
+            (this.left > 0 && this.tolerance > this.left)
         ) {
             console.warn('tolerance must be less then left and right');
         }
@@ -121,10 +127,10 @@ class Swipe {
     }
 
     transitionEnd(node, cb) {
-        function trEnd() {
+        let trEnd = () => {
             cb();
             node.removeEventListener(transitionEvent, trEnd);
-        }
+        };
 
         node.addEventListener(transitionEvent, trEnd);
     };
@@ -154,7 +160,7 @@ class Swipe {
         this.resetValue();
 
         if (this.group) {
-            swiped._closeAll(this.group);
+            swiped.closeAll(this.group);
         } else {
             this.close(true);
         }
@@ -207,7 +213,7 @@ class Swipe {
         this.swiped = true;
 
         if (!isForce) {
-            this.transitionEnd(this.elem, () => this.onOpen());
+            this.transitionEnd(this.elem, this.onOpen);
         }
 
         this.resetValue();
@@ -217,7 +223,6 @@ class Swipe {
      * Animation of the closing
      */
     close(isForce) {
-        console.log(1);
         this.animation(0);
         this.swiped = false;
 
@@ -245,10 +250,10 @@ class Swipe {
         this.delta = 0;
     };
 
-     _bindEvents() {
-         this.elem.addEventListener(touch.move, (e) => this.touchMove(e));
-         this.elem.addEventListener(touch.end, (e) => this.touchEnd(e));
-         this.elem.addEventListener(touch.start, (e) => this.touchStart(e));
+    _bindEvents() {
+        this.elem.addEventListener(touch.move, (e) => this.touchMove(e));
+        this.elem.addEventListener(touch.end, (e) => this.touchEnd(e));
+        this.elem.addEventListener(touch.start, (e) => this.touchStart(e));
     };
 
     /**
@@ -269,6 +274,7 @@ class Swipe {
      * Which of the touch was a first, if it's a multitouch
      * touchId saved on touchstart
      * @param {object} e - event
+     * @param {boolean} isTouchEnd
      * @returns {boolean}
      */
     isValidTouch(e, isTouchEnd) {
@@ -284,16 +290,22 @@ class Swipe {
             return false;
         }
 
+        if (this.dir > 0 && this.resistanceLeft || this.dir < 0 && this.resistanceRight) {
+            this.calcResistanceData();
+        }
+
+        this.animation(this.delta, 0);
+        this.onMove(this.delta);
+    };
+
+    calcResistanceData() {
         var deltaAbs = Math.abs(this.delta);
 
         if (deltaAbs > this.width) {
             // linear deceleration
             this.delta = this.dir * (this.width + (deltaAbs - this.width) / 8);
         }
-
-        this.animation(this.delta, 0);
-        this.onMove(this.delta);
-    };
+    }
 
     animation(x, duration) {
         duration = duration === undefined ? this.duration : duration;
