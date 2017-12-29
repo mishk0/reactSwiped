@@ -1,6 +1,7 @@
-import Swiped from '../src';
+import Swiped from '../src/swiped';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import ReactSwiped from '../src/reactComponent';
 
 Swiped.init({
     elem: '.list1',
@@ -8,13 +9,13 @@ Swiped.init({
     right: 200,
     left: 200,
     onOpen: function() {
-        console.log('open');
+        console.log('open1');
     },
     onClose: function() {
-        console.log('close');
+        console.log('close1');
     },
     onMove: function() {
-        console.log('move');
+        console.log('move1');
     }
 
 });
@@ -25,20 +26,20 @@ Swiped.init({
     right: 200,
     left: 200,
     onOpen: function() {
-        console.log('open');
+        console.log('open2');
     },
     onClose: function() {
-        console.log('close');
+        console.log('close2');
     },
     onMove: function() {
-        console.log('move');
+        console.log('move2');
     }
 });
 
 const App = () => (
-    <div className="App">
-        <span>React Swipe</span>
-    </div>
+    <ReactSwiped options={{left: 200, right: 200}}>
+        <div>very</div>
+    </ReactSwiped>
 );
 
 ReactDOM.render(<App />, document.getElementById('root'));

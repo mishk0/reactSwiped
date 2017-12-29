@@ -59,7 +59,11 @@ let swiped = new class Swiped {
 
     init(o) {
         o.id = this.id++;
-        return this.items.push(new Swipe(o));
+        let swipe = new Swipe(o);
+
+        this.items.push(swipe);
+
+        return swipe;
     };
 
     destroy(id, isRemoveNode) {
@@ -97,7 +101,7 @@ class Swipe {
 
         this.onOpen = typeof o.onOpen === 'function' ? o.onOpen : fn;
         this.onClose = typeof o.onClose === 'function' ? o.onClose : fn;
-        this.onMove = typeof o.onMove === 'function' ? o.onClose : fn;
+        this.onMove = typeof o.onMove === 'function' ? o.onMove : fn;
 
         this.right = o.right;
         this.left = o.left;
@@ -117,10 +121,8 @@ class Swipe {
     }
 
     transitionEnd(node, cb) {
-        var that = this;
-
         function trEnd() {
-            cb.call(that);
+            cb();
             node.removeEventListener(transitionEvent, trEnd);
         }
 
@@ -215,6 +217,7 @@ class Swipe {
      * Animation of the closing
      */
     close(isForce) {
+        console.log(1);
         this.animation(0);
         this.swiped = false;
 
