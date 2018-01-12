@@ -105,9 +105,12 @@ class Swipe {
         this.id = o.id;
         this.elem = typeof o.elem === 'string' ? document.querySelector(o.elem) : o.elem;
 
-        this.onOpen = typeof o.onOpen === 'function' ? o.onOpen : fn;
-        this.onClose = typeof o.onClose === 'function' ? o.onClose : fn;
-        this.onMove = typeof o.onMove === 'function' ? o.onMove : fn;
+        this.onOpen = o.onOpen;
+        this.onClose = o.onClose;
+        this.onMove = o.onMove;
+        this.stopPropagation = o.stopPropagation;
+        this.onAnimationOpenEnds = o.onAnimationOpenEnds;
+        this.onAnimationCloseEnds = o.onAnimationCloseEnds;
 
         this.right = typeof o.right === 'number' ? o.right : o.right.distance;
         this.left = typeof o.left === 'number' ? o.left : o.left.distance;
@@ -128,7 +131,10 @@ class Swipe {
 
     transitionEnd(node, cb) {
         let trEnd = () => {
-            cb();
+            if (cb) {
+                cb();
+            }
+
             node.removeEventListener(transitionEvent, trEnd);
         };
 
@@ -158,6 +164,8 @@ class Swipe {
         this.startTime = new Date();
 
         this.resetValue();
+
+        this.hadSwipedItems = swiped.hasSwipedItems();
 
         if (this.group) {
             swiped.closeAll(this.group);
@@ -191,6 +199,10 @@ class Swipe {
 
     touchEnd(e) {
         if (!this.isValidTouch(e, true) || !this.startSwipe) {
+            if (this.hadSwipedItems && this.stopPropagation) {
+                e.stopPropagation();
+            }
+
             return;
         }
 
@@ -205,15 +217,25 @@ class Swipe {
         e.preventDefault();
     };
 
+    onClick(e) {
+        if (this.hadSwipedItems && this.stopPropagation) {
+            e.stopPropagation();
+        }
+    };
+
     /**
      * Animation of the opening
      */
     open(isForce) {
+        if (this.onOpen) {
+            this.onOpen();
+        }
+
         this.animation(this.dir * this.width);
         this.swiped = true;
 
         if (!isForce) {
-            this.transitionEnd(this.elem, this.onOpen);
+            this.transitionEnd(this.elem, this.onAnimationOpenEnds);
         }
 
         this.resetValue();
@@ -223,11 +245,15 @@ class Swipe {
      * Animation of the closing
      */
     close(isForce) {
+        if (this.onClose) {
+            this.onClose();
+        }
+
         this.animation(0);
         this.swiped = false;
 
         if (!isForce) {
-            this.transitionEnd(this.elem, this.onClose);
+            this.transitionEnd(this.elem, this.onAnimationCloseEnds);
         }
 
         this.resetValue();
@@ -254,6 +280,7 @@ class Swipe {
         this.elem.addEventListener(touch.move, (e) => this.touchMove(e));
         this.elem.addEventListener(touch.end, (e) => this.touchEnd(e));
         this.elem.addEventListener(touch.start, (e) => this.touchStart(e));
+        this.elem.addEventListener('click', (e) => this.onClick(e));
     };
 
     /**
@@ -295,7 +322,10 @@ class Swipe {
         }
 
         this.animation(this.delta, 0);
-        this.onMove(this.delta);
+
+        if (this.onMove) {
+            this.onMove(this.delta);
+        }
     };
 
     calcResistanceData() {
