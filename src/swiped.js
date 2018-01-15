@@ -46,7 +46,8 @@ let defaultOptions = {
     time: 200,
     dir: 1,
     right: 0,
-    left: 0
+    left: 0,
+    resistance: true
 };
 
 let fn = function() {};
@@ -95,9 +96,10 @@ class Swipe {
         o = Object.assign(defaultOptions, o);
 
         this.duration = o.duration;
-        this.tolerance = o.tolerance;
-        this.resistanceLeft = typeof o.left === 'object' ? o.left.resistance : true;
-        this.resistanceRight = typeof o.right === 'object' ? o.right.resistance : true;
+        this.toleranceLeft = o.left && o.left.tolerance || o.tolerance;
+        this.toleranceRight = o.right && o.right.tolerance || o.tolerance;
+        this.resistanceLeft = typeof o.left === 'object' ? o.left.resistance : o.resistance;
+        this.resistanceRight = typeof o.right === 'object' ? o.right.resistance : o.resistance;
         this.time = o.time;
         this.width = o.left || o.right;
         this.dir = o.dir;
@@ -116,8 +118,8 @@ class Swipe {
         this.left = typeof o.left === 'number' ? o.left : o.left.distance;
 
         if (
-            (this.right > 0 && this.tolerance > this.right) ||
-            (this.left > 0 && this.tolerance > this.left)
+            (this.right > 0 && this.toleranceRight > this.right) ||
+            (this.left > 0 && this.toleranceLeft > this.left)
         ) {
             console.warn('tolerance must be less then left and right');
         }
@@ -206,8 +208,10 @@ class Swipe {
             return;
         }
 
+        let tolerance = this.dir < 0 ? this.toleranceRight : this.toleranceLeft;
+
         // if swipe is more then 150px or time is less then 150ms
-        if (this.dir * this.delta > this.tolerance || new Date() - this.startTime < this.time) {
+        if (this.dir * this.delta > tolerance || new Date() - this.startTime < this.time) {
             this.open();
         } else {
             this.close();
@@ -227,11 +231,16 @@ class Swipe {
      * Animation of the opening
      */
     open(isForce) {
+        let onOpenRes;
+
         if (this.onOpen) {
-            this.onOpen();
+            onOpenRes = this.onOpen(this.delta);
         }
 
-        this.animation(this.dir * this.width);
+        if (onOpenRes !== false) {
+            this.animation(this.dir * this.width);
+        }
+
         this.swiped = true;
 
         if (!isForce) {
@@ -246,7 +255,7 @@ class Swipe {
      */
     close(isForce) {
         if (this.onClose) {
-            this.onClose();
+            this.onClose(this.delta);
         }
 
         this.animation(0);
