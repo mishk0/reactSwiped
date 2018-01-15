@@ -231,6 +231,7 @@ class Swipe {
      * Animation of the opening
      */
     open(isForce) {
+        this.swiped = true;
         let onOpenRes;
 
         if (this.onOpen) {
@@ -240,8 +241,6 @@ class Swipe {
         if (onOpenRes !== false) {
             this.animation(this.dir * this.width);
         }
-
-        this.swiped = true;
 
         if (!isForce) {
             this.transitionEnd(this.elem, this.onAnimationOpenEnds);
@@ -254,12 +253,12 @@ class Swipe {
      * Animation of the closing
      */
     close(isForce) {
+        this.swiped = false;
+        this.animation(0);
+
         if (this.onClose) {
             this.onClose(this.delta);
         }
-
-        this.animation(0);
-        this.swiped = false;
 
         if (!isForce) {
             this.transitionEnd(this.elem, this.onAnimationCloseEnds);
