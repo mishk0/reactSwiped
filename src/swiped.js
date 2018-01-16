@@ -1,12 +1,12 @@
-let msPointer = window.navigator.msPointerEnabled;
+const msPointer = window.navigator.msPointerEnabled;
 
-let touch = {
+const touch = {
     start: msPointer ? 'MSPointerDown' : 'touchstart',
     move: msPointer ? 'MSPointerMove' : 'touchmove',
     end: msPointer ? 'MSPointerUp' : 'touchend'
 };
 
-let prefix = (function () {
+const prefix = (function () {
     var styles = window.getComputedStyle(document.documentElement, '');
     var pre = (Array.prototype.slice
             .call(styles)
@@ -17,30 +17,30 @@ let prefix = (function () {
     return '-' + pre + '-';
 })();
 
-let transitionEvent = (function() {
+const transitionEvent = (function() {
     let t;
-    let el = document.createElement('el');
+    const el = document.createElement('el');
 
-    let transitions = {
+    const transitions = {
         transition: 'transitionend',
         OTransition: 'oTransitionEnd',
         MozTransition: 'transitionend',
         WebkitTransition: 'webkitTransitionEnd'
     };
 
-    for (t in transitions){
-        if (el.style[t] !== undefined){
+    for (t in transitions) {
+        if (el.style[t] !== undefined) {
             return transitions[t];
         }
     }
 })();
 
-let cssProps = {
+const cssProps = {
     'transition': prefix + 'transition',
     'transform': prefix + 'transform'
 };
 
-let defaultOptions = {
+const defaultOptions = {
     duration: 200,
     tolerance: 50,
     time: 200,
@@ -50,9 +50,7 @@ let defaultOptions = {
     resistance: true
 };
 
-let fn = function() {};
-
-let swiped = new class Swiped {
+const swiped = new class Swiped {
     constructor() {
         this.items = [];
         this.id = 0;
@@ -60,16 +58,16 @@ let swiped = new class Swiped {
 
     init(o) {
         o.id = this.id++;
-        let swipe = new Swipe(o);
+        const swipe = new Swipe(o);
 
         this.items.push(swipe);
 
         return swipe;
-    };
+    }
 
     hasSwipedItems() {
         return this.items.some(item => item.swiped);
-    };
+    }
 
     destroy(id, isRemoveNode) {
         this.items.forEach((item, i) => {
@@ -80,16 +78,32 @@ let swiped = new class Swiped {
                 this.items.splice(i, 1);
             }
         });
-    };
+    }
 
-    closeAll(groupNumber) {
+    closeAll(groupName) {
         this.items.forEach(item => {
-            if (item.group === groupNumber) {
+            if (groupName && item.group === groupName || !groupName) {
                 item.close(true);
             }
         });
-    };
-};
+    }
+
+    enable(id) {
+        this.items.forEach(item => {
+            if (id && item.id === id || !id) {
+                item.enable();
+            }
+        });
+    }
+
+    disable(id) {
+        this.items.forEach(item => {
+            if (id && item.id === id || !id) {
+                item.disable();
+            }
+        });
+    }
+}();
 
 class Swipe {
     constructor(o = {}) {
@@ -116,6 +130,7 @@ class Swipe {
 
         this.right = typeof o.right === 'number' ? o.right : o.right.distance;
         this.left = typeof o.left === 'number' ? o.left : o.left.distance;
+        this.disabled = false;
 
         if (
             (this.right > 0 && this.toleranceRight > this.right) ||
@@ -124,15 +139,23 @@ class Swipe {
             console.warn('tolerance must be less then left and right');
         }
 
-        this._bindEvents();
-    };
+        this.bindEvents();
+    }
 
     destroy(isRemoveNode) {
         swiped.destroy(this.id, isRemoveNode);
     }
 
+    disable() {
+        this.disabled = true;
+    }
+
+    enable() {
+        this.disabled = false;
+    }
+
     transitionEnd(node, cb) {
-        let trEnd = () => {
+        const trEnd = () => {
             if (cb) {
                 cb();
             }
@@ -141,7 +164,7 @@ class Swipe {
         };
 
         node.addEventListener(transitionEvent, trEnd);
-    };
+    }
 
     /**
      * swipe.x - initial coordinate Х
@@ -156,7 +179,7 @@ class Swipe {
     touchStart(e) {
         var touch = e.changedTouches[0];
 
-        if (e.touches.length !== 1) {
+        if (e.touches.length !== 1 || this.disabled) {
             return;
         }
 
@@ -174,13 +197,13 @@ class Swipe {
         } else {
             this.close(true);
         }
-    };
+    }
 
     touchMove(e) {
         var touch = e.changedTouches[0];
 
         // touch of the other finger
-        if (!this.isValidTouch(e)) {
+        if (!this.isValidTouch(e) || this.disabled) {
             return;
         }
 
@@ -197,9 +220,13 @@ class Swipe {
             //prevent scroll
             e.preventDefault();
         }
-    };
+    }
 
     touchEnd(e) {
+        if (this.disabled) {
+            return;
+        }
+
         if (!this.isValidTouch(e, true) || !this.startSwipe) {
             if (this.hadSwipedItems && this.stopPropagation) {
                 e.stopPropagation();
@@ -208,7 +235,7 @@ class Swipe {
             return;
         }
 
-        let tolerance = this.dir < 0 ? this.toleranceRight : this.toleranceLeft;
+        const tolerance = this.dir < 0 ? this.toleranceRight : this.toleranceLeft;
 
         // if swipe is more then 150px or time is less then 150ms
         if (this.dir * this.delta > tolerance || new Date() - this.startTime < this.time) {
@@ -219,13 +246,13 @@ class Swipe {
 
         e.stopPropagation();
         e.preventDefault();
-    };
+    }
 
     onClick(e) {
         if (this.hadSwipedItems && this.stopPropagation) {
             e.stopPropagation();
         }
-    };
+    }
 
     /**
      * Animation of the opening
@@ -247,7 +274,7 @@ class Swipe {
         }
 
         this.resetValue();
-    };
+    }
 
     /**
      * Animation of the closing
@@ -265,7 +292,7 @@ class Swipe {
         }
 
         this.resetValue();
-    };
+    }
 
     toggle() {
         if (this.swiped) {
@@ -273,7 +300,7 @@ class Swipe {
         } else {
             this.open();
         }
-    };
+    }
 
     /**
      * reset to initial values
@@ -282,14 +309,14 @@ class Swipe {
         this.startSwipe = false;
         this.startScroll = false;
         this.delta = 0;
-    };
+    }
 
-    _bindEvents() {
+    bindEvents() {
         this.elem.addEventListener(touch.move, (e) => this.touchMove(e));
         this.elem.addEventListener(touch.end, (e) => this.touchEnd(e));
         this.elem.addEventListener(touch.start, (e) => this.touchStart(e));
         this.elem.addEventListener('click', (e) => this.onClick(e));
-    };
+    }
 
     /**
      * detect of the user action: swipe or scroll
@@ -303,7 +330,7 @@ class Swipe {
         } else if (Math.abs(this.delta) > DELTA_X && !this.startScroll) {
             this.startSwipe = true;
         }
-    };
+    }
 
     /**
      * Which of the touch was a first, if it's a multitouch
@@ -318,7 +345,7 @@ class Swipe {
         var touches = isTouchEnd ? 'changedTouches' : 'targetTouches';
 
         return e[touches][0].identifier === this.touchId;
-    };
+    }
 
     move() {
         if ((this.dir > 0 && (this.delta < 0 || this.left === 0)) || (this.dir < 0 && (this.delta > 0 || this.right === 0))) {
@@ -334,7 +361,7 @@ class Swipe {
         if (this.onMove) {
             this.onMove(this.delta);
         }
-    };
+    }
 
     calcResistanceData() {
         var deltaAbs = Math.abs(this.delta);
@@ -349,8 +376,8 @@ class Swipe {
         duration = duration === undefined ? this.duration : duration;
 
         this.elem.style.cssText = cssProps.transition + ':' + cssProps.transform + ' ' + duration + 'ms; ' +
-            cssProps.transform  + ':' + 'translate3d(' + x + 'px, 0px, 0px)';
-    };
+            cssProps.transform + ':' + 'translate3d(' + x + 'px, 0px, 0px)';
+    }
 }
 
 export default swiped;
